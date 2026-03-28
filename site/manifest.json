@@ -1,0 +1,10 @@
+{
+  "short_name": "Рязанский квест",
+  "name": "Рязанский квест — играй и открывай город",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#111827",
+  "background_color": "#ffffff",
+  "icons": []
+}
+

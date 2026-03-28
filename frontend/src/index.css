@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(125, 211, 252, 0.16), transparent 34%),
+    linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+  color: #0f172a;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.naryazan-map {
+  height: clamp(20rem, 52vh, 34rem);
+  width: 100%;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.06), rgba(37, 99, 235, 0.08)),
+    #f8fafc;
+}
+
+.nrz-map-pin,
+.nrz-map-stop,
+.nrz-map-user {
+  transform: translate(-50%, -100%);
+}
+
+.nrz-map-pin {
+  position: relative;
+  display: block;
+  height: 24px;
+  width: 24px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nrz-map-pin__dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px 999px 999px 0;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  transform: rotate(-45deg);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.18);
+}
+
+.nrz-map-pin__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  height: 8px;
+  width: 18px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.18);
+  filter: blur(3px);
+  transform: translateX(-50%);
+}
+
+.nrz-map-pin.is-pending .nrz-map-pin__dot {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.nrz-map-pin.is-done .nrz-map-pin__dot {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.nrz-map-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  max-width: 180px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+  padding: 0.45rem 0.8rem;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.18);
+  cursor: pointer;
+}
+
+.nrz-map-user {
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.96);
+  background: #0ea5e9;
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.18);
+}
+
+.nrz-map-user span {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.nrz-map-user.is-routing-origin {
+  background: #2563eb;
+  box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.2);
+}
+
+@media (max-width: 640px) {
+  .naryazan-map {
+    height: min(58svh, 28rem);
+  }
+
+  [class*='dgis'],
+  [class*='mapgl'] {
+    touch-action: manipulation;
+  }
+}

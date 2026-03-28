@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
+    <meta name="theme-color" content="#e2e8f0" />
+    <title>Рязанский квест</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="manifest" href="/manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://mapgl.2gis.com/api/js/v1"></script>
+    <style>
+      :root {
+        --glass-bg: rgba(255, 255, 255, 0.52);
+        --glass-strong: rgba(255, 255, 255, 0.72);
+        --glass-border: rgba(255, 255, 255, 0.38);
+        --glass-blur: blur(18px) saturate(155%);
+        --shadow-soft: 0 8px 32px rgba(31, 56, 88, 0.09);
+        --shadow-float: 0 20px 50px rgba(30, 58, 95, 0.12);
+        --text: #1e293b;
+        --muted: #64748b;
+        --accent-grad: linear-gradient(165deg, #5a7186 0%, #3d5368 100%);
+      }
+      * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+      body.app {
+        color: var(--text);
+        min-height: 100vh;
+        letter-spacing: -0.02em;
+      }
+      body.app::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background: linear-gradient(168deg, #f8fafc 0%, #e0f2fe 38%, #dbeafe 72%, #e2e8f0 100%);
+      }
+      body.app::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=85') center/cover no-repeat;
+        opacity: 0.2;
+        pointer-events: none;
+      }
+      .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-soft);
+      }
+      .glass-panel-strong {
+        background: var(--glass-strong);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-float);
+      }
+      .rounded-card { border-radius: 26px; }
+      .rounded-pill { border-radius: 9999px; }
+      .hero-radius { border-radius: 32px; }
+      .btn-primary {
+        padding: 14px 28px;
+        border-radius: 9999px;
+        background: var(--accent-grad);
+        color: #fff;
+        font-weight: 500;
+        font-size: 15px;
+        border: none;
+        box-shadow: 0 6px 24px rgba(61, 83, 104, 0.28);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(61, 83, 104, 0.32); }
+      .btn-primary:active { transform: translateY(0); }
+      .btn-ghost {
+        padding: 12px 22px;
+        border-radius: 9999px;
+        background: rgba(255,255,255,0.55);
+        border: 1px solid var(--glass-border);
+        color: #334155;
+        font-weight: 500;
+        font-size: 14px;
+        transition: background 0.15s ease;
+      }
+      .btn-ghost:hover { background: rgba(255,255,255,0.78); }
+      .input-glass {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.55);
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(10px);
+        font-size: 15px;
+      }
+      .input-glass::placeholder {
+        color: #94a3b8;
+        font-weight: 400;
+      }
+      .chip {
+        padding: 9px 18px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 500;
+        background: rgba(255,255,255,0.5);
+        border: 1px solid var(--glass-border);
+        color: var(--muted);
+        transition: background 0.15s ease;
+      }
+      .chip:hover { background: rgba(255,255,255,0.75); }
+      .map {
+        height: clamp(300px, 48vh, 480px);
+        width: 100%;
+        border-radius: 24px;
+        overflow: hidden;
+      }
+      .hero-title {
+        font-weight: 600;
+        letter-spacing: -0.035em;
+        line-height: 1.15;
+      }
+      .main-pad { padding-bottom: 5.5rem; }
+      @media (min-width: 1024px) {
+        .main-pad { padding-bottom: 2rem; }
+      }
+      .toast-glass {
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-soft);
+      }
+    </style>
+  </head>
+  <body class="app">
+    <header class="sticky top-0 z-40 px-3 pt-3 pb-1">
+      <div class="max-w-6xl mx-auto glass-panel rounded-pill px-5 py-3 flex items-center justify-between gap-3">
+        <a href="#/" class="hero-title text-lg text-slate-800 no-underline">Рязанский квест</a>
+        <nav class="text-sm flex flex-wrap gap-x-4 gap-y-1 items-center justify-end text-slate-600">
+          <a class="hover:text-slate-900 transition-colors no-underline" href="#/">Главная</a>
+          <button type="button" class="hover:text-slate-900 transition-colors bg-transparent border-0 cursor-pointer p-0 font-inherit text-sm text-slate-600" data-wip="Подбор рядом">Рядом</button>
+          <a class="hover:text-slate-900 transition-colors no-underline" href="#/profile">Профиль</a>
+          <a class="hover:text-slate-900 transition-colors no-underline" href="#/login" id="navLogin">Вход</a>
+          <button type="button" class="hover:text-slate-900 transition-colors hidden bg-transparent border-0 cursor-pointer p-0 font-inherit text-sm text-slate-600" id="navLogout">Выход</button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="app" class="max-w-6xl mx-auto px-3 py-4 main-pad"></main>
+
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-safe">
+      <div class="pointer-events-auto glass-panel-strong rounded-pill mx-3 mb-4 flex justify-around items-center gap-1 px-2 py-2.5 w-full max-w-md shadow-lg">
+        <a href="#/" class="flex flex-col items-center gap-0.5 text-[11px] text-slate-600 no-underline min-w-[3.5rem] py-1 rounded-pill hover:bg-white/40 transition-colors">
+          <span class="text-base leading-none opacity-80">⌂</span>
+          <span>Главная</span>
+        </a>
+        <button type="button" data-wip="Мои маршруты" class="flex flex-col items-center gap-0.5 text-[11px] text-slate-600 min-w-[3.5rem] py-1 rounded-pill hover:bg-white/40 transition-colors bg-transparent border-0 cursor-pointer font-inherit">
+          <span class="text-base leading-none opacity-80">◇</span>
+          <span>Маршруты</span>
+        </button>
+        <button type="button" data-wip="Избранное" class="flex flex-col items-center gap-0.5 text-[11px] text-slate-600 min-w-[3.5rem] py-1 rounded-pill hover:bg-white/40 transition-colors bg-transparent border-0 cursor-pointer font-inherit">
+          <span class="text-base leading-none opacity-80">♡</span>
+          <span>Избранное</span>
+        </button>
+        <button type="button" data-wip="Голосовой гид" class="flex flex-col items-center gap-0.5 text-[11px] text-slate-600 min-w-[3.5rem] py-1 rounded-pill hover:bg-white/40 transition-colors bg-transparent border-0 cursor-pointer font-inherit">
+          <span class="text-base leading-none opacity-80">◉</span>
+          <span>Гид</span>
+        </button>
+        <a href="#/profile" class="flex flex-col items-center gap-0.5 text-[11px] text-slate-600 no-underline min-w-[3.5rem] py-1 rounded-pill hover:bg-white/40 transition-colors">
+          <span class="text-base leading-none opacity-80">◐</span>
+          <span>Профиль</span>
+        </a>
+      </div>
+    </nav>
+
+    <div id="dlg" class="fixed inset-0 hidden items-center justify-center p-4 z-[60] bg-slate-900/35 backdrop-blur-sm">
+      <div class="glass-panel-strong rounded-card w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between gap-2">
+          <div class="hero-title text-lg text-slate-800" id="dlgTitle">Окно</div>
+          <button type="button" class="btn-ghost text-sm !py-2 !px-4" id="dlgClose">Закрыть</button>
+        </div>
+        <div class="mt-4 space-y-3 text-slate-600" id="dlgBody"></div>
+      </div>
+    </div>
+
+    <script>
+      let cfg = { twogisKey: '' };
+      const api = {
+        async get(path) {
+          const token = localStorage.getItem('token');
+          const res = await fetch(path, { headers: token ? { 'x-auth-token': token } : {} });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw data;
+          return data;
+        },
+        async post(path, body) {
+          const token = localStorage.getItem('token');
+          const res = await fetch(path, {
+            method: 'POST',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'x-auth-token': token } : {}),
+            body: JSON.stringify(body || {})
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw data;
+          return data;
+        }
+      };
+
+      const state = {
+        user: null,
+        routes: [],
+        points: [],
+        stops: [],
+        selectedRoute: null,
+        map: null,
+        polyline: null,
+        markers: [],
+        userMarker: null,
+        watchId: null,
+        routeStats: { meters: 0, seconds: 0, source: '' },
+        placedStops: []
+      };
+
+      const el = (html) => {
+        const t = document.createElement('template');
+        t.innerHTML = html.trim();
+        return t.content.firstElementChild;
+      };
+
+      const toast = (msg, type='info') => {
+        let cls = 'text-slate-800 bg-white/82';
+        if (type === 'error') cls = 'text-rose-900 bg-rose-50/90';
+        if (type === 'success') cls = 'text-emerald-900 bg-emerald-50/90';
+        const box = el(`<div class="fixed bottom-24 lg:bottom-5 right-4 z-[55] px-5 py-3.5 rounded-pill text-sm font-medium toast-glass ${cls}">${msg}</div>`);
+        document.body.appendChild(box);
+        setTimeout(() => box.remove(), 2800);
+      };
+
+      function showWip(name) {
+        const label = name || 'Этот раздел';
+        dlg.open('В разработке', [
+          el(`<p class="text-sm leading-relaxed text-slate-600">${label} находится в разработке. Скоро здесь появится полный функционал.</p>`),
+          el('<button type="button" class="btn-primary w-full text-center" id="wipOk">Понятно</button>')
+        ]);
+        document.getElementById('wipOk').onclick = () => dlg.close();
+      }
+      document.addEventListener('click', (e) => {
+        const t = e.target.closest('[data-wip]');
+        if (!t) return;
+        e.preventDefault();
+        e.stopPropagation();
+        showWip(t.getAttribute('data-wip') || '');
+      });
+
+      const dlg = {
+        open(title, nodes) {
+          document.getElementById('dlgTitle').textContent = title;
+          const b = document.getElementById('dlgBody');
+          b.innerHTML = '';
+          nodes.forEach(n => b.appendChild(n));
+          const m = document.getElementById('dlg');
+          m.classList.remove('hidden');
+          m.classList.add('flex');
+        },
+        close() {
+          const m = document.getElementById('dlg');
+          m.classList.add('hidden');
+          m.classList.remove('flex');
+        }
+      };
+      document.getElementById('dlgClose').addEventListener('click', dlg.close);
+      document.getElementById('dlg').addEventListener('click', (e) => { if (e.target.id === 'dlg') dlg.close(); });
+
+      async function loadConfig() {
+        try { cfg = await api.get('/api/config'); } catch (e) { cfg = { twogisKey: '' }; }
+      }
+
+      const setNavAuth = () => {
+        const login = document.getElementById('navLogin');
+        const logout = document.getElementById('navLogout');
+        if (localStorage.getItem('token')) {
+          login.classList.add('hidden');
+          logout.classList.remove('hidden');
+        } else {
+          login.classList.remove('hidden');
+          logout.classList.add('hidden');
+        }
+      };
+
+      document.getElementById('navLogout').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        state.user = null;
+        setNavAuth();
+        location.hash = '#/login';
+        toast('Вы вышли', 'success');
+      });
+
+      async function fetchUser() {
+        try { state.user = await api.get('/api/users/me'); } catch (e) {
+          state.user = null;
+          localStorage.removeItem('token');
+        }
+        setNavAuth();
+      }
+
+      async function loadCoreData() {
+        try {
+          const [points, routes, stops] = await Promise.all([
+            api.get('/api/points'),
+            api.get('/api/routes'),
+            api.get('/api/stops')
+          ]);
+          state.points = points;
+          state.routes = routes;
+          state.stops = stops;
+          localStorage.setItem('offline_points', JSON.stringify(points));
+          localStorage.setItem('offline_routes', JSON.stringify(routes));
+          localStorage.setItem('offline_stops', JSON.stringify(stops));
+        } catch (e) {
+          state.points = JSON.parse(localStorage.getItem('offline_points') || '[]');
+          state.routes = JSON.parse(localStorage.getItem('offline_routes') || '[]');
+          state.stops = JSON.parse(localStorage.getItem('offline_stops') || '[]');
+        }
+      }
+
+      function sortedRoutePoints(route) {
+        return (route?.points || []).slice().sort((a,b) => (a.order||0) - (b.order||0));
+      }
+
+      function getScannedPointIds() {
+        return (state.user?.scannedPoints || []).map(p => p._id);
+      }
+
+      function destroyMapGl() {
+        if (state.watchId != null) {
+          navigator.geolocation.clearWatch(state.watchId);
+          state.watchId = null;
+        }
+        state.markers.forEach(m => { if (m && m.destroy) m.destroy(); });
+        state.markers = [];
+        if (state.polyline && state.polyline.destroy) state.polyline.destroy();
+        state.polyline = null;
+        if (state.userMarker && state.userMarker.destroy) state.userMarker.destroy();
+        state.userMarker = null;
+        if (state.map && state.map.destroy) state.map.destroy();
+        state.map = null;
+      }
+
+      function buildWaypointsFromRoute(route) {
+        const pts = sortedRoutePoints(route);
+        if (!pts.length) return [];
+        const wp = [{ lng: pts[0].lng, lat: pts[0].lat, kind: 'poi', ref: pts[0] }];
+        for (let i = 0; i < pts.length - 1; i++) {
+          const extras = state.placedStops.filter(x => x.afterIndex === i).map(x => x.stop);
+          extras.forEach(s => wp.push({ lng: s.lng, lat: s.lat, kind: 'stop', ref: s }));
+          wp.push({ lng: pts[i+1].lng, lat: pts[i+1].lat, kind: 'poi', ref: pts[i+1] });
+        }
+        return wp;
+      }
+
+      async function updatePedestrianRoute() {
+        if (!state.map || !state.selectedRoute) return;
+        const w = buildWaypointsFromRoute(state.selectedRoute);
+        const seq = w.map(p => ({ lng: p.lng, lat: p.lat }));
+        let data = { coordinates: [], total_distance_m: 0, total_duration_s: 0, source: '', error: null };
+        try {
+          if (seq.length >= 2) data = await api.post('/api/routing/pedestrian', { waypoints: seq });
+        } catch (e) {
+          data = { coordinates: seq.map(p => [p.lng, p.lat]), total_distance_m: 0, total_duration_s: 0, source: 'local', error: e };
+        }
+        state.routeStats = {
+          meters: data.total_distance_m || 0,
+          seconds: data.total_duration_s || 0,
+          source: data.source || ''
+        };
+        const coords = data.coordinates || [];
+        if (state.polyline) { state.polyline.destroy(); state.polyline = null; }
+        if (coords.length >= 2 && window.mapgl && mapgl.Polyline) {
+          try {
+            state.polyline = new mapgl.Polyline(state.map, {
+              coordinates: coords,
+              color: '#5a7d92',
+              width: 5
+            });
+          } catch (e) {
+            console.warn('Polyline', e);
+          }
+        }
+        const statEl = document.getElementById('routeStats');
+        if (statEl) {
+          const km = (state.routeStats.meters / 1000).toFixed(2);
+          const min = Math.round(state.routeStats.seconds / 60);
+          statEl.textContent = `Ориентир: ${km} км пешком, ~${min} мин (данные 2ГИС). Источник: ${state.routeStats.source || '—'}${data.error ? ', резерв' : ''}`;
+        }
+      }
+
+      function drawMarkers() {
+        state.markers.forEach(m => { if (m && m.destroy) m.destroy(); });
+        state.markers = [];
+        if (!state.map || !state.selectedRoute) return;
+        const scanned = new Set(getScannedPointIds());
+        sortedRoutePoints(state.selectedRoute).forEach((p) => {
+          const isDone = scanned.has(p._id);
+          const color = isDone ? '#16a34a' : '#dc2626';
+          const html = `<button type="button" style="width:16px;height:16px;border-radius:9999px;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer;padding:0" data-p="${p._id}" class="rq-m"></button>`;
+          const marker = new mapgl.HtmlMarker(state.map, { coordinates: [p.lng, p.lat], html });
+          state.markers.push(marker);
+        });
+        state.placedStops.forEach((ps) => {
+          const s = ps.stop;
+          const sid = (s._id || '').replace(/"/g, '');
+          const html = `<button type="button" class="rq-s" data-sn="${sid}" style="padding:2px 6px;font-size:10px;border-radius:6px;background:#7c3aed;color:#fff;border:0;cursor:pointer">${(s.name || '').slice(0, 14)}</button>`;
+          const m = new mapgl.HtmlMarker(state.map, { coordinates: [s.lng, s.lat], html });
+          state.markers.push(m);
+        });
+      }
+      window.addEventListener('click', (e) => {
+        const t = e.target;
+        if (!t || !t.classList) return;
+        if (t.classList.contains('rq-m')) {
+          const id = t.getAttribute('data-p');
+          if (id) openPointSheet(id);
+        }
+        if (t.classList.contains('rq-s')) {
+          const sid = t.getAttribute('data-sn');
+          const s = state.stops.find(x => x._id === sid) || state.placedStops.map(x => x.stop).find(x => x._id === sid);
+          if (s) dlg.open(s.name, [el(`<div class="text-sm text-slate-600">${s.address || ''}</div>`)]);
+        }
+      });
+
+      function initMapIfNeeded(containerEl) {
+        if (!window.mapgl) return;
+        if (!cfg.twogisKey) {
+          loadConfig().then(() => initMapIfNeeded(containerEl));
+          return;
+        }
+        destroyMapGl();
+        state.map = new mapgl.Map(containerEl, {
+          key: cfg.twogisKey,
+          center: [39.742, 54.629],
+          zoom: 14
+        });
+        drawMarkers();
+        updatePedestrianRoute().then(() => {});
+
+        const locBtn = document.getElementById('btnLocate');
+        if (locBtn) {
+          locBtn.onclick = () => {
+            if (!navigator.geolocation) return toast('Геолокация недоступна', 'error');
+            if (state.watchId != null) {
+              navigator.geolocation.clearWatch(state.watchId);
+              state.watchId = null;
+              if (state.userMarker) { state.userMarker.destroy(); state.userMarker = null; }
+              locBtn.textContent = 'Показать моё положение';
+              return;
+            }
+            locBtn.textContent = 'Скрыть отслеживание';
+            state.watchId = navigator.geolocation.watchPosition((pos) => {
+              const lng = pos.coords.longitude, lat = pos.coords.latitude;
+              if (!state.userMarker) {
+                state.userMarker = new mapgl.Marker(state.map, { coordinates: [lng, lat] });
+              } else {
+                state.userMarker.setCoordinates([lng, lat]);
+              }
+            }, () => toast('Не удалось получить координаты', 'error'), { enableHighAccuracy: true, maximumAge: 10000 });
+          };
+        }
+      }
+
+      function openPointSheet(pointId) {
+        const p = state.points.find(x => x._id === pointId) || (state.selectedRoute?.points || []).find(x => x._id === pointId);
+        if (!p) return;
+        const nodes = [el(`<div class="text-sm text-slate-600 leading-relaxed">${p.description || ''}</div>`), el(`<button type="button" class="btn-primary w-full text-sm !py-3" id="btnOpenGuide">Открыть материалы гида</button>`)];
+        dlg.open(p.name, nodes);
+        document.getElementById('btnOpenGuide').onclick = () => { dlg.close(); openGuideForPoint(p, false); };
+      }
+
+      function openGuideForPoint(p, afterScan) {
+        const wrap = el('<div class="space-y-3"></div>');
+        if (p.guideText) wrap.appendChild(el(`<div class="text-sm text-slate-800 whitespace-pre-wrap">${p.guideText}</div>`));
+        if (p.guideAudioUrl) {
+          wrap.appendChild(el(`<audio controls class="w-full" src="${p.guideAudioUrl}">Ваш браузер не поддерживает audio</audio>`));
+        }
+        if (!p.guideText && !p.guideAudioUrl) wrap.appendChild(el('<div class="text-sm text-slate-600">Текст гида будет добавлен.</div>'));
+        if (afterScan && p.quiz) {
+          const b = el('<button type="button" class="btn-primary w-full text-sm !py-3">Перейти к мини-тесту</button>');
+          b.onclick = () => { dlg.close(); offerQuiz(p); };
+          wrap.appendChild(b);
+        }
+        dlg.open('Гид: ' + p.name, [wrap]);
+      }
+
+      function offerQuiz(p) {
+        if (!p.quiz) return;
+        const q = p.quiz;
+        const box = el('<div class="space-y-2"></div>');
+        box.appendChild(el(`<div class="text-sm font-medium">${q.question}</div>`));
+        q.options.forEach((opt, i) => {
+          const b = el(`<button type="button" class="w-full text-left text-sm input-glass hover:bg-white/75 py-3.5">${opt}</button>`);
+          b.onclick = async () => {
+            try {
+              const r = await api.post('/api/quiz/point', { pointId: p._id, choiceIndex: i });
+              if (r.already) toast('Тест по точке уже сдан', 'success');
+              else if (r.success) toast('Верно. Начислено: ' + r.reward, 'success');
+              else toast('Неверно, баллы не начислены', 'error');
+              await fetchUser();
+              dlg.close();
+            } catch (e) { toast(e.msg || 'Ошибка теста', 'error'); }
+          };
+          box.appendChild(b);
+        });
+        dlg.open('Мини-тест после точки', [box]);
+      }
+
+      function offerFinalTest(route) {
+        const ft = route.finalTest;
+        if (!ft) return;
+        const box = el('<div class="space-y-2"></div>');
+        box.appendChild(el(`<div class="text-sm">${ft.question}</div>`));
+        box.appendChild(el('<div class="text-xs text-slate-500">Можно закрыть окно — баллы за финальный тест не будут начислены.</div>'));
+        ft.options.forEach((opt, i) => {
+          const b = el(`<button type="button" class="w-full text-left text-sm input-glass hover:bg-white/75 py-3.5">${opt}</button>`);
+          b.onclick = async () => {
+            try {
+              const r = await api.post('/api/quiz/final', { routeId: route._id, choiceIndex: i });
+              if (r.already) toast('Финальный тест уже сдан', 'success');
+              else if (r.success) toast('Верно. Начислено: ' + r.reward, 'success');
+              else toast('Неверно — баллы не начислены', 'error');
+              await fetchUser();
+              dlg.close();
+              if (typeof window.__refreshHome === 'function') window.__refreshHome();
+            } catch (e) { toast(e.msg || 'Ошибка', 'error'); }
+          };
+          box.appendChild(b);
+        });
+        dlg.open('Финальный тест маршрута', [box]);
+      }
+
+      async function handleScanResult(qr) {
+        try {
+          const res = await api.post('/api/scan', { qrValue: qr });
+          await fetchUser();
+          const p = res.point;
+          if (res.freshScan) toast('Точка засчитана, +' + res.reward + ' баллов', 'success');
+          if (p && state.map) { drawMarkers(); updatePedestrianRoute(); }
+          if (typeof window.__refreshHome === 'function') window.__refreshHome();
+          if (p) openGuideForPoint(p, true);
+        } catch (e) {
+          toast(e.msg || 'Ошибка сканирования', 'error');
+        }
+      }
+
+      function renderLogin() {
+        const root = document.getElementById('app');
+        root.innerHTML = '';
+        root.appendChild(el(`
+          <div class="max-w-md mx-auto mt-6 glass-panel-strong rounded-card p-8 md:p-10">
+            <h2 class="hero-title text-3xl text-slate-800 mb-2">С возвращением</h2>
+            <p class="text-slate-500 text-sm mb-8 font-light">Войдите, чтобы сохранять маршруты и баллы.</p>
+            <form class="space-y-4" id="loginForm">
+              <input class="input-glass" placeholder="E-mail или телефон +7..." name="login" required autocomplete="username" />
+              <input class="input-glass" placeholder="Пароль" type="password" name="password" required autocomplete="current-password" />
+              <button type="submit" class="btn-primary w-full">Войти</button>
+            </form>
+            <p class="text-sm text-center mt-6 text-slate-500">Нет аккаунта? <a class="text-slate-700 font-medium hover:underline no-underline" href="#/register">Регистрация</a></p>
+            <button type="button" class="btn-ghost w-full mt-4 text-sm" data-wip="Вход по соцсетям">Продолжить другим способом</button>
+          </div>
+        `));
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          try {
+            const res = await api.post('/api/auth/login', { login: fd.get('login'), password: fd.get('password') });
+            localStorage.setItem('token', res.token);
+            await fetchUser();
+            toast('Вход выполнен', 'success');
+            location.hash = '#/';
+          } catch (err) { toast(err.msg || 'Ошибка входа', 'error'); }
+        });
+      }
+
+      function renderRegister() {
+        const root = document.getElementById('app');
+        root.innerHTML = '';
+        root.appendChild(el(`
+          <div class="max-w-md mx-auto mt-6 glass-panel-strong rounded-card p-8 md:p-10">
+            <h2 class="hero-title text-3xl text-slate-800 mb-2">Новый аккаунт</h2>
+            <p class="text-slate-500 text-sm mb-8 font-light">Укажите e-mail или телефон — как вам удобнее.</p>
+            <form class="space-y-4" id="regForm">
+              <input class="input-glass" placeholder="Имя" type="text" name="name" required />
+              <input class="input-glass" placeholder="E-mail (если нет телефона)" type="email" name="email" autocomplete="email" />
+              <input class="input-glass" placeholder="Телефон +79001234567" name="phone" autocomplete="tel" />
+              <input class="input-glass" placeholder="Пароль (мин. 6)" type="password" name="password" minlength="6" required autocomplete="new-password" />
+              <button type="submit" class="btn-primary w-full">Создать аккаунт</button>
+            </form>
+            <p class="text-sm text-center mt-6 text-slate-500">Уже есть аккаунт? <a class="text-slate-700 font-medium hover:underline no-underline" href="#/login">Вход</a></p>
+          </div>
+        `));
+        document.getElementById('regForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          try {
+            const res = await api.post('/api/auth/register', {
+              name: fd.get('name'),
+              email: fd.get('email'),
+              phone: fd.get('phone'),
+              password: fd.get('password')
+            });
+            localStorage.setItem('token', res.token);
+            await fetchUser();
+            toast('Регистрация успешна', 'success');
+            location.hash = '#/';
+          } catch (err) { toast(err.msg || 'Ошибка регистрации', 'error'); }
+        });
+      }
+
+      function renderProfile() {
+        const root = document.getElementById('app');
+        root.innerHTML = '';
+        if (!state.user) { location.hash = '#/login'; return; }
+        const u = state.user;
+        destroyMapGl();
+        root.appendChild(el(`
+          <div class="max-w-2xl mx-auto mt-4 glass-panel-strong rounded-card p-6 md:p-8 space-y-8">
+            <div class="flex flex-col sm:flex-row gap-6 items-start">
+              <div class="flex flex-col items-center gap-3">
+                <div id="avBox" class="w-28 h-28 rounded-full glass-panel border-2 border-white/80 overflow-hidden flex items-center justify-center text-xs text-slate-400 font-medium">фото</div>
+                <label class="btn-ghost text-xs cursor-pointer">
+                  Загрузить фото
+                  <input type="file" id="avIn" accept="image/*" class="hidden" />
+                </label>
+              </div>
+              <div class="flex-1 space-y-3 min-w-0">
+                <h2 class="hero-title text-2xl md:text-3xl text-slate-800">${u.name}</h2>
+                <div class="text-slate-500 text-sm font-light">${u.email || '—'} · ${u.phone || '—'}</div>
+                <div class="text-lg font-medium text-slate-700">Баллы <span class="text-slate-900">${u.balance}</span></div>
+              </div>
+            </div>
+            <label class="flex items-center gap-3 text-sm text-slate-600 cursor-pointer">
+              <input type="checkbox" id="hideLb" class="rounded-md border-slate-300" ${u.hideFromLeaderboard ? 'checked' : ''} />
+              Не показывать меня в лидерборде
+            </label>
+            <div class="flex flex-wrap gap-3">
+              <button type="button" id="saveProf" class="btn-primary text-sm !py-3">Сохранить настройки</button>
+              <button type="button" class="btn-ghost text-sm" data-wip="Уведомления о маршрутах">Настройки уведомлений</button>
+            </div>
+            <div class="glass-panel rounded-card p-5">
+              <div class="text-sm font-medium text-slate-700 mb-3">Пройденные маршруты</div>
+              <ul class="text-sm text-slate-600 space-y-2 font-light">
+                ${(u.completedRoutes?.length ? u.completedRoutes.map(r => `<li class="pl-3 border-l-2 border-slate-300/60">${r.name}</li>`).join('') : `<li class="text-slate-400">Пока нет</li>`)}
+              </ul>
+            </div>
+          </div>
+        `));
+        const box = document.getElementById('avBox');
+        if (u.avatar) {
+          box.innerHTML = `<img src="${u.avatar}" alt="" class="w-full h-full object-cover" />`;
+        }
+        document.getElementById('avIn').addEventListener('change', async (ev) => {
+          const f = ev.target.files?.[0];
+          if (!f) return;
+          const rdr = new FileReader();
+          rdr.onload = async () => {
+            try {
+              await api.post('/api/users/me/avatar', { imageBase64: rdr.result });
+              await fetchUser();
+              if (state.user.avatar) box.innerHTML = `<img src="${state.user.avatar}" class="w-full h-full object-cover" />`;
+              toast('Фото сохранено', 'success');
+            } catch (e) { toast(e.msg || 'Ошибка загрузки', 'error'); }
+          };
+          rdr.readAsDataURL(f);
+        });
+        document.getElementById('saveProf').addEventListener('click', async () => {
+          try {
+            await api.post('/api/users/me', { hideFromLeaderboard: document.getElementById('hideLb').checked });
+            await fetchUser();
+            toast('Сохранено', 'success');
+          } catch (e) { toast(e.msg || 'Ошибка', 'error'); }
+        });
+      }
+
+      async function renderHome() {
+        const root = document.getElementById('app');
+        root.innerHTML = '';
+        if (!localStorage.getItem('token')) { location.hash = '#/login'; return; }
+
+        await loadConfig();
+        await fetchUser();
+        await loadCoreData();
+
+        const hero = el(`
+          <div class="relative overflow-hidden hero-radius glass-panel-strong mb-6 min-h-[220px] md:min-h-[260px]">
+            <div class="absolute inset-0 bg-cover bg-center scale-105" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=85');"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-slate-900/55 via-cyan-900/25 to-slate-900/50"></div>
+            <div class="relative p-6 md:p-10 text-white">
+              <p class="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/80">Путешествия · Рязань</p>
+              <h1 class="hero-title text-3xl md:text-4xl lg:text-[2.5rem] text-white mt-3 max-w-xl drop-shadow-sm">Откройте город спокойным маршрутом</h1>
+              <p class="text-white/88 text-sm md:text-base mt-4 max-w-lg font-light leading-relaxed">Пешие тропы по центру, природа вокруг, квесты без спешки — как выходные у озера или в горах, только в вашем темпе.</p>
+              <div class="flex flex-wrap gap-2 mt-6">
+                <button type="button" class="chip !bg-white/22 !text-white !border-white/35 hover:!bg-white/32">Популярное</button>
+                <button type="button" class="chip !bg-white/22 !text-white !border-white/35 hover:!bg-white/32" data-wip="Маршруты с видом на воду">У воды</button>
+                <button type="button" class="chip !bg-white/22 !text-white !border-white/35 hover:!bg-white/32" data-wip="Парки и бульвары">Парки</button>
+                <button type="button" class="chip !bg-white/22 !text-white !border-white/35 hover:!bg-white/32" data-wip="История города">История</button>
+              </div>
+              <div class="mt-7 flex flex-wrap gap-3">
+                <button type="button" class="btn-primary !bg-white !text-slate-800 !shadow-lg border-0" data-wip="Умный подбор маршрута">Подобрать маршрут</button>
+                <button type="button" class="btn-ghost !text-white !border-white/40 !bg-white/10 hover:!bg-white/20" data-wip="Сохранённые прогулки">Мои сохранённые</button>
+              </div>
+            </div>
+          </div>
+        `);
+        hero.querySelectorAll('.chip').forEach((b) => {
+          if (!b.getAttribute('data-wip')) {
+            const labels = ['Популярные маршруты', 'Маршруты у воды', 'Парки города', 'Исторические прогулки'];
+            const i = [...hero.querySelectorAll('.chip')].indexOf(b);
+            b.setAttribute('data-wip', labels[i] || 'Фильтр');
+          }
+        });
+
+        const left = el('<div class="lg:col-span-2 space-y-5"></div>');
+        const right = el('<div class="space-y-5"></div>');
+
+        left.appendChild(el(`
+          <div class="glass-panel rounded-card p-4 md:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 class="hero-title text-lg text-slate-800">Карта маршрута</h2>
+                <p class="text-xs text-slate-500 font-light mt-0.5">2ГИС · пешеходная линия по улицам</p>
+              </div>
+              <button type="button" id="btnLocate" class="btn-ghost text-sm !py-2.5 !px-5">Моё положение</button>
+            </div>
+            <div class="glass-panel rounded-card p-1 overflow-hidden">
+              <div id="map" class="map"></div>
+            </div>
+            <p id="routeStats" class="text-xs text-slate-500 mt-3 leading-relaxed font-light"></p>
+          </div>
+        `));
+
+        const scanCard = el(`
+          <div class="glass-panel rounded-card p-5 md:p-6">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="hero-title text-lg text-slate-800">Скан точки</h2>
+              <span class="text-[11px] font-medium px-3 py-1.5 rounded-pill glass-panel ${navigator.onLine ? 'text-emerald-800' : 'text-amber-900'}">${navigator.onLine ? 'онлайн' : 'офлайн'}</span>
+            </div>
+            <p class="text-sm text-slate-500 mt-3 font-light leading-relaxed">Введите код с таблички (как при сканировании QR).</p>
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div class="md:col-span-2">
+                <label class="text-[11px] font-medium uppercase tracking-wider text-slate-400">Значение</label>
+                <input id="qrInput" class="input-glass mt-1.5" placeholder="например: rq_museum_kremlin_01" />
+              </div>
+              <button type="button" id="qrSend" class="btn-primary w-full md:w-auto text-sm !py-3.5">Отправить</button>
+            </div>
+            <details class="text-sm mt-4 group">
+              <summary class="cursor-pointer text-slate-500 font-medium list-none flex items-center gap-2">
+                <span class="opacity-60">+</span> Подсказка для демо
+              </summary>
+              <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2" id="qrHint"></div>
+            </details>
+            <button type="button" class="btn-ghost w-full mt-4 text-sm" data-wip="Камера для скана QR">Открыть камеру (скоро)</button>
+          </div>
+        `);
+        left.appendChild(scanCard);
+        const qh = scanCard.querySelector('#qrHint');
+        ['rq_museum_kremlin_01','rq_uspensky_02','rq_pryanik_03','rq_esenin_04','rq_borisoglebsky_05'].forEach(v => {
+          const b = el(`<button type="button" data-qr="${v}" class="text-left input-glass py-2.5 text-xs font-mono text-slate-600 hover:bg-white/80">${v}</button>`);
+          b.onclick = () => { scanCard.querySelector('#qrInput').value = v; };
+          qh.appendChild(b);
+        });
+
+        const scanQueueKey = 'offline_scan_queue';
+        const enqueueScan = (qr) => {
+          const q = JSON.parse(localStorage.getItem(scanQueueKey) || '[]');
+          q.push({ id: crypto.randomUUID(), qrValue: qr, ts: Date.now() });
+          localStorage.setItem(scanQueueKey, JSON.stringify(q));
+        };
+        const dequeueAll = () => JSON.parse(localStorage.getItem(scanQueueKey) || '[]');
+        const removeQueued = (id) => {
+          localStorage.setItem(scanQueueKey, JSON.stringify(dequeueAll().filter(x => x.id !== id)));
+        };
+        const syncQueue = async () => {
+          for (const item of dequeueAll()) {
+            try {
+              const res = await api.post('/api/scan', { qrValue: item.qrValue });
+              removeQueued(item.id);
+              if (res.reward) toast('Синхронизировано: +' + res.reward, 'success');
+            } catch {}
+          }
+          await fetchUser();
+          drawMarkers();
+          updatePedestrianRoute();
+          renderRight();
+        };
+        window.addEventListener('online', syncQueue);
+
+        scanCard.querySelector('#qrSend').onclick = async () => {
+          const qr = scanCard.querySelector('#qrInput').value.trim();
+          if (!qr) return toast('Введите значение', 'error');
+          if (!navigator.onLine) { enqueueScan(qr); toast('Сохранено офлайн', 'success'); return; }
+          await handleScanResult(qr);
+        };
+
+        const layout = el('<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6"></div>');
+        layout.appendChild(left);
+        layout.appendChild(right);
+        root.appendChild(hero);
+        root.appendChild(layout);
+
+        function renderRight() {
+          right.innerHTML = '';
+          const u = state.user;
+          const routesBlock = el(`
+            <div class="glass-panel rounded-card p-5">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="hero-title text-lg text-slate-800">Маршруты</h2>
+                <div class="text-sm font-semibold text-slate-700 tabular-nums glass-panel px-3 py-1.5 rounded-pill">${u?.balance ?? 0} б.</div>
+              </div>
+              <div class="mt-4 space-y-3" id="routesList"></div>
+              <div class="mt-5 hidden glass-panel rounded-card p-4 md:p-5 space-y-3" id="routeMeta"></div>
+            </div>
+          `);
+          right.appendChild(routesBlock);
+
+          const list = routesBlock.querySelector('#routesList');
+          state.routes.forEach((r) => {
+            const card = el(`
+              <div class="glass-panel rounded-card p-4 hover:bg-white/60 transition-colors">
+                <div class="font-semibold text-slate-800">${r.name}</div>
+                <div class="text-sm text-slate-500 font-light mt-1 leading-relaxed">${r.description || ''}</div>
+                <button type="button" class="btn-primary mt-4 text-sm !py-2.5 !px-6">Выбрать</button>
+              </div>
+            `);
+            card.querySelector('button').onclick = () => {
+              state.selectedRoute = r;
+              state.placedStops = [];
+              renderRouteMeta(r);
+              if (state.map) {
+                drawMarkers();
+                updatePedestrianRoute();
+              }
+            };
+            list.appendChild(card);
+          });
+
+          function renderRouteMeta(r) {
+            const meta = routesBlock.querySelector('#routeMeta');
+            meta.classList.remove('hidden');
+            const ai = r.paidAiGuide || {};
+            const tk = r.tickets || {};
+            const ids = new Set(getScannedPointIds());
+            const allOk = (r.points || []).every(p => ids.has(p._id));
+            meta.innerHTML = `
+              <div class="hero-title text-base text-slate-800">${r.name}</div>
+              <div class="text-sm text-slate-500 mt-2 font-light leading-relaxed">${r.description || ''}</div>
+              <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="glass-panel rounded-card p-3 text-slate-600 font-light">Точек: <span class="font-medium text-slate-800">${r.points?.length || 0}</span></div>
+                <div class="glass-panel rounded-card p-3 text-slate-600 font-light">Баллы за точки: <span class="font-medium text-slate-800">${r.totalReward || 0}</span></div>
+              </div>
+              <div class="mt-4 glass-panel rounded-card p-4 space-y-3">
+                <div class="font-medium text-sm text-slate-800">${ai.title || 'Платный AI-гид'}</div>
+                <div class="text-xs text-slate-500 font-light leading-relaxed">${ai.description || ''}</div>
+                <div class="text-[11px] text-slate-400">${ai.priceRub || '—'} ₽ · ${ai.featureFlag || '—'}</div>
+                <button type="button" id="btnAiWip" class="btn-primary w-full text-sm !py-3">Подключить AI-гида</button>
+              </div>
+              <div class="mt-4 glass-panel rounded-card p-4 space-y-3">
+                <div class="font-medium text-sm text-slate-800">${tk.title || 'Билеты'}</div>
+                <div class="text-xs text-slate-500 font-light leading-relaxed">${tk.description || ''}</div>
+                <button type="button" id="btnTickets" class="btn-primary w-full text-sm !py-3">Оформить билеты (партнёр)</button>
+              </div>
+              <div class="mt-4 space-y-3">
+                <div class="text-sm font-medium text-slate-800">Остановка по пути</div>
+                <div class="text-xs text-slate-500 font-light leading-relaxed">После какой точки добавить заведение.</div>
+                <select id="afterIdx" class="input-glass text-sm py-3"></select>
+                <select id="stopPick" class="input-glass text-sm py-3"></select>
+                <button type="button" id="btnAddStop" class="btn-ghost w-full text-sm !py-3">Добавить остановку</button>
+                <div id="stopList" class="text-xs text-slate-500 space-y-1 font-light"></div>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-3">
+                <button type="button" id="btnFinal" class="btn-primary text-sm !py-3 !px-5 ${allOk ? '' : 'opacity-60'}">Финальный тест</button>
+                <button type="button" id="btnShare" class="btn-ghost text-sm !py-3 !px-5">Поделиться</button>
+              </div>
+            `;
+            meta.querySelector('#btnAiWip').onclick = () => showWip('Платный голосовой AI-гид');
+            const sel = meta.querySelector('#afterIdx');
+            sortedRoutePoints(r).forEach((p, idx) => {
+              if (idx >= sortedRoutePoints(r).length - 1) return;
+              sel.appendChild(new Option('После: ' + p.name, String(idx)));
+            });
+            const sp = meta.querySelector('#stopPick');
+            state.stops.forEach(s => {
+              sp.appendChild(new Option(`${s.name} — ${s.address}`, s._id));
+            });
+            const renderStopList = () => {
+              const sl = meta.querySelector('#stopList');
+              sl.innerHTML = state.placedStops.length ? state.placedStops.map((x, i) => `<div>${i+1}. После точки #${x.afterIndex+1}: ${x.stop.name}</div>`).join('') : 'Остановок нет';
+            };
+            renderStopList();
+            meta.querySelector('#btnAddStop').onclick = () => {
+              const idx = parseInt(meta.querySelector('#afterIdx').value, 10);
+              const sid = meta.querySelector('#stopPick').value;
+              const stop = state.stops.find(x => x._id === sid);
+              if (!stop || Number.isNaN(idx)) return;
+              state.placedStops.push({ afterIndex: idx, stop });
+              renderStopList();
+              drawMarkers();
+              updatePedestrianRoute();
+            };
+            meta.querySelector('#btnTickets').onclick = () => {
+              dlg.open('Билеты', [
+                el(`<div class="text-sm text-slate-700">${tk.note || ''}</div>`),
+                el(`<a class="block text-center btn-primary !no-underline text-sm !py-3" href="${tk.partnerCheckoutUrl || '#'}" target="_blank" rel="noopener">Открыть сайт партнёра</a>`)
+              ]);
+            };
+            meta.querySelector('#btnShare').onclick = async () => {
+              const text = `Маршрут "${r.name}" в Рязанском квесте. Точек: ${r.points?.length || 0}.`;
+              if (navigator.share) {
+                try { await navigator.share({ title: 'Рязанский квест', text, url: location.href }); } catch {}
+              } else {
+                await navigator.clipboard.writeText(text);
+                toast('Скопировано', 'success');
+              }
+            };
+            meta.querySelector('#btnFinal').onclick = () => {
+              if (!allOk) {
+                toast('Сначала отсканируйте все точки маршрута', 'info');
+                return;
+              }
+              offerFinalTest(r);
+            };
+          }
+
+          if (state.selectedRoute) renderRouteMeta(state.selectedRoute);
+
+          const lb = el('<div class="glass-panel rounded-card p-5"><div class="hero-title text-lg text-slate-800 mb-3">Лидерборд</div><div id="lb" class="text-sm text-slate-600"></div><button type="button" class="btn-ghost w-full mt-4 text-xs" data-wip="Полный рейтинг и сезоны">Весь рейтинг</button></div>');
+          right.appendChild(lb);
+          api.get('/api/users/leaderboard').then((leaders) => {
+            lb.querySelector('#lb').innerHTML = '<ul class="divide-y">' + leaders.map((x,i) => {
+              const img = x.avatar ? `<img src="${x.avatar}" alt="" class="w-8 h-8 rounded-full object-cover border" />` : `<div class="w-8 h-8 rounded-full bg-slate-200 border text-[10px] flex items-center justify-center">нет</div>`;
+              return `<li class="py-3 flex items-center justify-between gap-2 border-b border-white/40 last:border-0"><span class="flex items-center gap-3">${img}<span class="text-slate-700 font-medium">${i+1}. ${x.name}</span></span><span class="font-semibold text-slate-800 tabular-nums">${x.balance}</span></li>`;
+            }).join('') + '</ul>';
+          }).catch(() => { lb.querySelector('#lb').textContent = 'Недоступно офлайн'; });
+
+          const shop = el('<div class="glass-panel rounded-card p-5"><div class="hero-title text-lg text-slate-800 mb-3">Магазин купонов</div><div id="shop" class="text-sm text-slate-600"></div><button type="button" class="btn-ghost w-full mt-4 text-xs" data-wip="История покупок">История покупок</button></div>');
+          right.appendChild(shop);
+          api.get('/api/rewards').then((items) => {
+            shop.querySelector('#shop').innerHTML = '<div class="space-y-3">' + items.map(rw => `
+              <div class="glass-panel rounded-card p-4 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium text-slate-800">${rw.name}</div>
+                  <div class="text-sm text-slate-500 font-light mt-0.5">${rw.description}</div>
+                  <div class="text-[11px] text-slate-400 mt-1">${rw.partnerName || ''}</div>
+                </div>
+                <button type="button" data-buy="${rw._id}" class="btn-primary text-sm !py-2 !px-4 shrink-0">${rw.cost} б.</button>
+              </div>
+            `).join('') + '</div>';
+            shop.querySelectorAll('[data-buy]').forEach(btn => {
+              btn.onclick = async () => {
+                try {
+                  const res = await api.post('/api/rewards/purchase', { rewardId: btn.getAttribute('data-buy') });
+                  toast('Промокод: ' + res.promoCode, 'success');
+                  await fetchUser();
+                  renderRight();
+                } catch (e) { toast(e.msg || 'Ошибка', 'error'); }
+              };
+            });
+          }).catch(() => { shop.querySelector('#shop').textContent = 'Недоступно офлайн'; });
+        }
+
+        renderRight();
+        window.__refreshHome = renderRight;
+
+        const mapNode = left.querySelector('#map');
+        const tryMap = () => {
+          if (window.mapgl && cfg.twogisKey) { initMapIfNeeded(mapNode); return; }
+          setTimeout(tryMap, 200);
+        };
+        tryMap();
+      }
+
+      function route() {
+        const hash = location.hash.replace('#','') || '/';
+        const token = localStorage.getItem('token');
+        if ((hash === '/' || hash === '') && !token) return renderLogin();
+        if (hash === '/login') return renderLogin();
+        if (hash === '/register') return renderRegister();
+        if (hash === '/profile') return renderProfile();
+        return renderHome();
+      }
+
+      window.addEventListener('hashchange', () => { destroyMapGl(); route(); });
+      (async () => {
+        await loadConfig();
+        setNavAuth();
+        await fetchUser();
+        route();
+      })();
+    </script>
+  </body>
+</html>
