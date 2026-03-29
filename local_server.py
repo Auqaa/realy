@@ -16,8 +16,25 @@ ROOT = Path(__file__).resolve().parent
 SITE_DIR = ROOT / "site"
 DB_PATH = ROOT / "backend" / "data" / "db.json"
 
-TWOGIS_KEY = os.environ.get("TWOGIS_KEY", "67d20ce5-f5ec-42a0-85a6-c17ce759809b")
-ROUTING_URL = f"https://routing.api.2gis.com/carrouting/6.0.0/global?key={TWOGIS_KEY}"
+
+def _load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+_load_env_file(ROOT / ".env")
+_load_env_file(ROOT / "backend" / ".env")
+
+TWOGIS_KEY = os.environ.get("TWOGIS_KEY", "")
+ROUTING_URL = f"https://routing.api.2gis.com/carrouting/6.0.0/global?key={TWOGIS_KEY}" if TWOGIS_KEY else ""
 
 CURRENT_SCHEMA_VERSION = 2
 

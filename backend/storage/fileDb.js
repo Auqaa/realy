@@ -7,6 +7,8 @@ const DB_PATH = path.join(DB_DIR, 'db.json');
 const TEMPLATE_PATH = path.join(DB_DIR, 'db.template.json');
 
 const makeId = () => crypto.randomUUID();
+const DEFAULT_ADMIN_EMAIL = 'admin@local.test';
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
 const seedData = () => {
   if (fs.existsSync(TEMPLATE_PATH)) {
@@ -131,6 +133,74 @@ const seedData = () => {
 
 let dbCache = null;
 
+const normalizeDbShape = (db) => {
+  db.users = Array.isArray(db.users) ? db.users : [];
+  db.routes = Array.isArray(db.routes) ? db.routes : [];
+  db.points = Array.isArray(db.points) ? db.points : [];
+  db.rewards = Array.isArray(db.rewards) ? db.rewards : [];
+  db.optionalStops = Array.isArray(db.optionalStops) ? db.optionalStops : [];
+  db.scans = Array.isArray(db.scans) ? db.scans : [];
+
+  db.users = db.users.map((user) => ({
+    favoriteRoutes: [],
+    avatar: '',
+    hideFromLeaderboard: false,
+    payments: [],
+    role: 'User',
+    ...user
+  }));
+
+  if (!db.users.some((user) => user.role === 'Administrator')) {
+    db.users.push({
+      _id: makeId(),
+      name: 'Администратор',
+      email: DEFAULT_ADMIN_EMAIL,
+      phone: '',
+      password: DEFAULT_ADMIN_PASSWORD,
+      balance: 0,
+      completedRoutes: [],
+      scannedPoints: [],
+      favoriteRoutes: [],
+      avatar: '',
+      hideFromLeaderboard: true,
+      payments: [],
+      role: 'Administrator',
+      verification: {
+        email: {
+          verified: true,
+          pendingCode: null,
+          requestedAt: null,
+          verifiedAt: new Date().toISOString()
+        },
+        phone: {
+          verified: false,
+          pendingCode: null,
+          requestedAt: null,
+          verifiedAt: null
+        }
+      },
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  db.routes = db.routes.map((route) => ({
+    category: route.category || 'Без категории',
+    themes: Array.isArray(route.themes) ? route.themes : [],
+    image: route.image || '',
+    ...route
+  }));
+
+  db.points = db.points.map((point) => ({
+    waypointType: point.waypointType || 'regular',
+    address: point.address || '',
+    qrCodeImage: point.qrCodeImage || '',
+    image: point.image || '',
+    ...point
+  }));
+
+  return db;
+};
+
 const ensureDb = () => {
   if (dbCache) return dbCache;
 
@@ -138,18 +208,21 @@ const ensureDb = () => {
   if (!fs.existsSync(DB_PATH)) {
     const initial = seedData();
     fs.writeFileSync(DB_PATH, JSON.stringify(initial, null, 2), 'utf-8');
-    dbCache = initial;
+    dbCache = normalizeDbShape(initial);
+    fs.writeFileSync(DB_PATH, JSON.stringify(dbCache, null, 2), 'utf-8');
     return dbCache;
   }
 
   const raw = fs.readFileSync(DB_PATH, 'utf-8');
-  dbCache = JSON.parse(raw || '{}');
+  dbCache = normalizeDbShape(JSON.parse(raw || '{}'));
+  fs.writeFileSync(DB_PATH, JSON.stringify(dbCache, null, 2), 'utf-8');
 
   // Если файл пустой/битый — пересоздадим.
   if (!dbCache.points || !dbCache.routes || !dbCache.rewards) {
     const initial = seedData();
     fs.writeFileSync(DB_PATH, JSON.stringify(initial, null, 2), 'utf-8');
-    dbCache = initial;
+    dbCache = normalizeDbShape(initial);
+    fs.writeFileSync(DB_PATH, JSON.stringify(dbCache, null, 2), 'utf-8');
   }
 
   return dbCache;

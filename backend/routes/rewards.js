@@ -1,7 +1,9 @@
+const crypto = require('crypto');
 const express = require('express');
-const router = express.Router();
 const auth = require('../middleware/auth');
 const { getDb, withDb } = require('../storage/fileDb');
+
+const router = express.Router();
 
 const museumRewards = [
   {
@@ -99,6 +101,19 @@ const museumRewards = [
 
 const getRewardCatalog = (db) => [...museumRewards, ...(db.rewards || [])];
 
+const buildPaymentMeta = ({ reward, ticketOptionId }) => {
+  const suffix = (ticketOptionId || 'BASE').toUpperCase();
+  return {
+    orderId: crypto.randomUUID(),
+    paymentId: `PAY-${Date.now().toString(36).toUpperCase()}`,
+    promoCode:
+      reward.kind === 'museum_ticket'
+        ? `NRZ-${reward._id.slice(-6).toUpperCase()}-${suffix}`
+        : reward.promoCode,
+    ticketCode: `TKT-${crypto.randomBytes(3).toString('hex').toUpperCase()}`
+  };
+};
+
 router.get('/', async (req, res) => {
   try {
     const db = await getDb();
@@ -117,10 +132,7 @@ router.post('/purchase', auth, async (req, res) => {
 
     const ticketOption = reward.ticketOptions?.find((item) => item._id === ticketOptionId) || null;
     const cost = ticketOption?.cost || reward.cost;
-    const promoCode =
-      reward.kind === 'museum_ticket'
-        ? `NRZ-${reward._id.slice(-6).toUpperCase()}-${(ticketOptionId || 'BASE').toUpperCase()}`
-        : reward.promoCode;
+    const meta = buildPaymentMeta({ reward, ticketOptionId });
 
     const user = db.users.find((u) => u._id === req.user.id);
     if (!user) return res.status(401).json({ msg: 'User not found' });
@@ -131,13 +143,27 @@ router.post('/purchase', auth, async (req, res) => {
       const innerUser = innerDb.users.find((u) => u._id === req.user.id);
       if (!innerUser) return;
       innerUser.balance -= cost;
+      innerUser.payments = innerUser.payments || [];
+      innerUser.payments.unshift({
+        ...meta,
+        type: 'points',
+        rewardId: reward._id,
+        rewardName: reward.name,
+        ticketOptionId: ticketOptionId || null,
+        ticketOptionName: ticketOption?.name || null,
+        amountPoints: cost,
+        amountRub: ticketOption?.priceRub || reward.priceRub || null,
+        status: 'paid',
+        createdAt: new Date().toISOString()
+      });
       newBalance = innerUser.balance;
     });
 
     res.json({
       success: true,
       newBalance,
-      promoCode,
+      promoCode: meta.promoCode,
+      ticketCode: meta.ticketCode,
       ticketOption,
       reward: {
         _id: reward._id,
@@ -145,6 +171,76 @@ router.post('/purchase', auth, async (req, res) => {
       }
     });
   } catch (err) {
+    res.status(500).send('Server error');
+  }
+});
+
+router.post('/pay', auth, async (req, res) => {
+  const { rewardId, ticketOptionId, email, cardNumber, cardholder } = req.body;
+
+  try {
+    const db = await getDb();
+    const reward = getRewardCatalog(db).find((item) => item._id === rewardId);
+    if (!reward) return res.status(404).json({ msg: 'Reward not found' });
+
+    const ticketOption = reward.ticketOptions?.find((item) => item._id === ticketOptionId) || null;
+    const amountRub = Number(ticketOption?.priceRub || reward.priceRub || 0);
+    if (!amountRub) {
+      return res.status(400).json({ msg: 'Payment is not available for this item' });
+    }
+
+    const normalizedCardNumber = String(cardNumber || '').replace(/\s+/g, '');
+    if (!/^\d{16}$/.test(normalizedCardNumber)) {
+      return res.status(400).json({ msg: 'Card number must contain 16 digits' });
+    }
+
+    if (!String(cardholder || '').trim()) {
+      return res.status(400).json({ msg: 'Cardholder name is required' });
+    }
+
+    if (!String(email || '').trim()) {
+      return res.status(400).json({ msg: 'E-mail is required for payment receipt' });
+    }
+
+    const user = db.users.find((u) => u._id === req.user.id);
+    if (!user) return res.status(401).json({ msg: 'User not found' });
+
+    const meta = buildPaymentMeta({ reward, ticketOptionId });
+
+    await withDb(async (innerDb) => {
+      const innerUser = innerDb.users.find((u) => u._id === req.user.id);
+      if (!innerUser) return;
+      innerUser.payments = innerUser.payments || [];
+      innerUser.payments.unshift({
+        ...meta,
+        type: 'card',
+        rewardId: reward._id,
+        rewardName: reward.name,
+        ticketOptionId: ticketOptionId || null,
+        ticketOptionName: ticketOption?.name || null,
+        amountRub,
+        status: 'paid',
+        email: String(email).trim(),
+        cardLast4: normalizedCardNumber.slice(-4),
+        createdAt: new Date().toISOString()
+      });
+    });
+
+    res.json({
+      success: true,
+      orderId: meta.orderId,
+      paymentId: meta.paymentId,
+      promoCode: meta.promoCode,
+      ticketCode: meta.ticketCode,
+      amountRub,
+      reward: {
+        _id: reward._id,
+        name: reward.name
+      },
+      ticketOption
+    });
+  } catch (err) {
+    console.error(err);
     res.status(500).send('Server error');
   }
 });

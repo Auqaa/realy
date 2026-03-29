@@ -17,6 +17,14 @@ const shuffle = (items) => {
   return next;
 };
 
+const pieceStyles = (imageUrl, clipPath) => ({
+  clipPath,
+  backgroundImage: `url(${imageUrl})`,
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  backgroundSize: 'cover'
+});
+
 const PointPuzzle = ({ imageUrl, title, pieceCount = 5 }) => {
   const pieces = useMemo(
     () =>
@@ -31,14 +39,14 @@ const PointPuzzle = ({ imageUrl, title, pieceCount = 5 }) => {
   const [selectedPieceId, setSelectedPieceId] = useState(null);
   const [placedPieceIds, setPlacedPieceIds] = useState([]);
   const [trayOrder, setTrayOrder] = useState(() => shuffle(pieces.map((piece) => piece.id)));
-  const [hint, setHint] = useState('Выберите фрагмент снизу и коснитесь подходящего контура.');
+  const [hint, setHint] = useState('Выберите фрагмент снизу и поставьте его в подходящий контур.');
 
   useEffect(() => {
     setSelectedPieceId(null);
     setPlacedPieceIds([]);
     setTrayOrder(shuffle(pieces.map((piece) => piece.id)));
-    setHint('Выберите фрагмент снизу и коснитесь подходящего контура.');
-  }, [pieces, title]);
+    setHint('Выберите фрагмент снизу и поставьте его в подходящий контур.');
+  }, [pieces, title, imageUrl]);
 
   const solved = placedPieceIds.length === pieces.length;
 
@@ -62,8 +70,8 @@ const PointPuzzle = ({ imageUrl, title, pieceCount = 5 }) => {
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h4 className="text-sm font-semibold text-slate-900">Полигональный пазл</h4>
-          <p className="text-xs text-slate-500">Соберите фото места из {pieces.length} фрагментов.</p>
+          <h4 className="text-sm font-semibold text-slate-900">Пазл по фотографии точки</h4>
+          <p className="text-xs text-slate-500">Соберите настоящее фото места из {pieces.length} фрагментов.</p>
         </div>
         {solved && <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Собрано</span>}
       </div>
@@ -73,7 +81,7 @@ const PointPuzzle = ({ imageUrl, title, pieceCount = 5 }) => {
           <img
             src={imageUrl}
             alt={title}
-            className={`h-full w-full object-cover transition duration-300 ${solved ? 'scale-100 opacity-100' : 'scale-[1.03] opacity-25'}`}
+            className={`h-full w-full object-cover transition duration-300 ${solved ? 'scale-100 opacity-100' : 'scale-[1.03] opacity-15 blur-[1px]'}`}
           />
         )}
 
@@ -95,25 +103,14 @@ const PointPuzzle = ({ imageUrl, title, pieceCount = 5 }) => {
                     border: '1.5px dashed rgba(255,255,255,0.9)'
                   }}
                 />
-                {isPlaced && (
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      clipPath: piece.clipPath,
-                      backgroundImage: `url(${imageUrl})`,
-                      backgroundSize: '100% 100%',
-                      backgroundPosition: 'center',
-                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.75)'
-                    }}
-                  />
-                )}
+                {isPlaced && <div className="absolute inset-0" style={pieceStyles(imageUrl, piece.clipPath)} />}
               </React.Fragment>
             );
           })}
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-slate-500">{solved ? 'Пазл собран. Можно открыть другие материалы точки.' : hint}</p>
+      <p className="mt-3 text-xs text-slate-500">{solved ? 'Пазл собран. Фото точки открыто полностью.' : hint}</p>
 
       {!solved && (
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -128,14 +125,9 @@ const PointPuzzle = ({ imageUrl, title, pieceCount = 5 }) => {
                   key={pieceId}
                   type="button"
                   onClick={() => setSelectedPieceId(pieceId)}
-                  className={`rounded-2xl border px-3 py-3 text-left text-xs transition ${
-                    isSelected ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600'
-                  }`}
+                  className={`rounded-2xl border px-3 py-3 text-left text-xs transition ${isSelected ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600'}`}
                 >
-                  <span
-                    className="mb-2 block h-10 w-full bg-slate-300"
-                    style={{ clipPath: piece.clipPath }}
-                  />
+                  <span className="mb-2 block h-20 w-full rounded-xl ring-1 ring-black/5" style={pieceStyles(imageUrl, piece.clipPath)} />
                   {piece.label}
                 </button>
               );

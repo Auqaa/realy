@@ -18,5 +18,6 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#0f172a",
-  "background_color": "#f8fafc"
+  "background_color": "#f8fafc",
+  "description": "НаРязань — маршруты, QR-квесты и билеты по Рязани"
 }

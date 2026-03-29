@@ -15,8 +15,12 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top, rgba(125, 211, 252, 0.16), transparent 34%),
-    linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+    linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(239, 246, 255, 0.94) 100%),
+    radial-gradient(circle at top, rgba(125, 211, 252, 0.18), transparent 34%),
+    url('./assets/fon.jpg');
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
   color: #0f172a;
 }
 

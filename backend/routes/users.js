@@ -47,6 +47,7 @@ router.get('/me', auth, async (req, res) => {
 
     res.json({
       ...safeUser,
+      role: safeUser.role || 'User',
       favoriteRoutes,
       savedRoutes: favoriteRoutes,
       completedRoutes,

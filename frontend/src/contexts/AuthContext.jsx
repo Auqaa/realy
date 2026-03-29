@@ -132,11 +132,13 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    isAdmin: user?.role === 'Administrator',
     loading,
     login,
     register,
     logout,
     setUser,
+    fetchUser,
     updateProfile,
     toggleFavoriteRoute,
     requestVerification,

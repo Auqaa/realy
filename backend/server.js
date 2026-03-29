@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { getDb } = require('./storage/fileDb');
 
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Инициализируем локальную file-based БД (без MongoDB).
@@ -11,7 +12,7 @@ getDb();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));

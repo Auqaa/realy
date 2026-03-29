@@ -44,7 +44,7 @@ const findUserByIdentifier = (db, identifier) => {
 
   return db.users
     .map(withVerificationState)
-    .find((user) => user.email === email || user.phone === phone);
+    .find((user) => (email && user.email === email) || (phone && user.phone === phone));
 };
 
 router.post(
@@ -93,6 +93,7 @@ router.post(
         email,
         phone,
         password: hashedPassword,
+        role: 'User',
         balance: 0,
         completedRoutes: [],
         scannedPoints: [],

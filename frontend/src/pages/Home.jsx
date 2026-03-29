@@ -454,7 +454,7 @@ const Home = () => {
         className="mb-4 overflow-hidden rounded-[2rem] border border-white/70 bg-slate-900 text-white shadow-xl"
         style={{
           backgroundImage:
-            "linear-gradient(135deg, rgba(15,23,42,0.78), rgba(30,41,59,0.36)), url('/images/hero/ryazan-hero.jpg')",
+            "linear-gradient(135deg, rgba(15,23,42,0.76), rgba(30,41,59,0.42)), url('/images/hero/00_ryazan.jpg')",
           backgroundPosition: 'center',
           backgroundSize: 'cover'
         }}
@@ -698,7 +698,7 @@ const Home = () => {
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-slate-900">QR-сканер</h2>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Mobile ready</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Сканирование</span>
             </div>
             <QRScanner onScanSuccess={handleScanSuccess} />
             <p className="mt-3 text-xs leading-5 text-slate-500">

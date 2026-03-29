@@ -1,9 +1,9 @@
-const DEFAULT_TWOGIS_KEY = process.env.TWOGIS_KEY || '67d20ce5-f5ec-42a0-85a6-c17ce759809b';
+const SHARED_TWOGIS_KEY = process.env.TWOGIS_KEY || '';
 
-const TWOGIS_MAP_KEY = process.env.TWOGIS_MAP_KEY || process.env.TWOGIS_PUBLIC_KEY || DEFAULT_TWOGIS_KEY;
-const TWOGIS_ROUTING_KEY = process.env.TWOGIS_ROUTING_KEY || DEFAULT_TWOGIS_KEY;
-const TWOGIS_GEOCODER_KEY = process.env.TWOGIS_GEOCODER_KEY || DEFAULT_TWOGIS_KEY;
-const TWOGIS_PLACES_KEY = process.env.TWOGIS_PLACES_KEY || DEFAULT_TWOGIS_KEY;
+const TWOGIS_MAP_KEY = process.env.TWOGIS_MAP_KEY || process.env.TWOGIS_PUBLIC_KEY || SHARED_TWOGIS_KEY;
+const TWOGIS_ROUTING_KEY = process.env.TWOGIS_ROUTING_KEY || SHARED_TWOGIS_KEY;
+const TWOGIS_GEOCODER_KEY = process.env.TWOGIS_GEOCODER_KEY || SHARED_TWOGIS_KEY;
+const TWOGIS_PLACES_KEY = process.env.TWOGIS_PLACES_KEY || SHARED_TWOGIS_KEY;
 
 const ROUTING_URL = `https://routing.api.2gis.com/routing/7.0.0/global?key=${TWOGIS_ROUTING_KEY}`;
 const GEOCODER_URL = 'https://catalog.api.2gis.com/3.0/items/geocode';
