@@ -8,6 +8,13 @@ status: active
 
 Этот документ нужен, чтобы дизайнер мог спокойно менять макеты в Figma, а реализация в коде потом шла без догадок и лишних пересборок.
 
+Сопутствующие документы:
+
+- project brief: `docs/design/figma-project-brief.md`
+- build checklist: `docs/design/figma-build-checklist.md`
+- revision template: `docs/design/figma-revision-template.md`
+- component map: `docs/design/figma-component-map.md`
+
 ## Что считаем source of truth
 
 - Figma отвечает за визуальный слой: layout, spacing, typography, colors, component states, asset placement.
