@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import AdminHome from './pages/AdminHome';
 import AdminRoutes from './pages/AdminRoutes';
 import AdminRoutePacks from './pages/AdminRoutePacks';
+import GuideWorkspace from './pages/GuideWorkspace';
 import Profile from './components/Profile';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import AdminWorkspaceShell from './components/AdminWorkspaceShell';
@@ -19,10 +20,17 @@ const PrivateRoute = ({ children }) => {
 };
 
 const AdminRoute = ({ children }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, hasEditorialAccess } = useAuth();
   if (loading) return <div className="flex justify-center p-10">Загрузка...</div>;
   if (!user) return <Navigate to="/login" replace />;
-  return isAdmin ? children : <Navigate to="/" replace />;
+  return hasEditorialAccess ? children : <Navigate to="/" replace />;
+};
+
+const GuideRoute = ({ children }) => {
+  const { user, loading, hasGuideWorkspaceAccess } = useAuth();
+  if (loading) return <div className="flex justify-center p-10">Загрузка...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return hasGuideWorkspaceAccess ? children : <GuideWorkspace accessDenied />;
 };
 
 function AppRoutes() {
@@ -47,6 +55,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/guide"
+        element={
+          <GuideRoute>
+            <GuideWorkspace />
+          </GuideRoute>
+        }
+      />
+      <Route
         path="/admin"
         element={
           <AdminRoute>
@@ -65,7 +81,7 @@ function AppRoutes() {
 }
 
 function AppShell() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, hasGuideWorkspaceAccess, hasEditorialAccess } = useAuth();
 
   return (
     <BrowserRouter>
@@ -82,7 +98,12 @@ function AppShell() {
                   Профиль
                 </Link>
               )}
-              {user && isAdmin && (
+              {user && hasGuideWorkspaceAccess && (
+                <Link to="/guide" className="hover:underline underline-offset-4">
+                  Гид
+                </Link>
+              )}
+              {user && hasEditorialAccess && (
                 <Link to="/admin" className="hover:underline underline-offset-4">
                   Админка
                 </Link>

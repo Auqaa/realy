@@ -1,16 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { QrReader } from 'react-qr-reader';
-import { BrowserQRCodeReader } from '@zxing/browser';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  addScanToQueue,
-  getScanQueue,
-  removeScanFromQueue
-} from '../utils/offlineStorage';
+import { addScanToQueue, getScanQueue, removeScanFromQueue } from '../utils/offlineStorage';
+import { decodeQrFromImageFile, QrPhotoDecodeError } from '../utils/qrPhotoDecode';
 
 const IGNORABLE_SCAN_ERRORS = ['notfoundexception', 'checksumexception', 'formatexception'];
+
+const getPhotoDecodeMessage = (error) => {
+  if (error instanceof QrPhotoDecodeError) {
+    if (error.code === 'qr-not-found') {
+      return 'Не удалось найти QR на фото. Попробуйте сделать снимок ближе и без бликов.';
+    }
+
+    if (error.code === 'image-read-failed' || error.code === 'image-load-failed' || error.code === 'image-processing-failed') {
+      return 'Не удалось обработать фото. Попробуйте снять QR ещё раз или выбрать более чёткий снимок.';
+    }
+
+    if (error.code === 'decode-failed') {
+      return 'Не удалось распознать QR на этом фото. Попробуйте повторить снимок.';
+    }
+  }
+
+  return 'Не удалось распознать QR на фото. Попробуйте сделать снимок ближе.';
+};
 
 const QRScanner = ({ onScanSuccess }) => {
   const [scanning, setScanning] = useState(true);
@@ -20,7 +34,6 @@ const QRScanner = ({ onScanSuccess }) => {
   const [processingUpload, setProcessingUpload] = useState(false);
   const { setUser } = useAuth();
   const videoId = useMemo(() => `qr-video-${cameraMode}`, [cameraMode]);
-  const imageReader = useMemo(() => new BrowserQRCodeReader(), []);
   const canUseLiveCamera = typeof window !== 'undefined' ? window.isSecureContext : false;
 
   const syncQueue = async () => {
@@ -52,7 +65,7 @@ const QRScanner = ({ onScanSuccess }) => {
         onScanSuccess?.(res.data.point);
       } else {
         await addScanToQueue(value);
-        toast.success('Код сохранён офлайн. Синхронизация пройдет позже');
+        toast.success('Код сохранён офлайн. Синхронизация пройдёт позже');
         onScanSuccess?.({ name: 'Сохранено офлайн' });
       }
       setManualCode('');
@@ -135,16 +148,16 @@ const QRScanner = ({ onScanSuccess }) => {
     setProcessingUpload(true);
     setCameraError('');
 
-    const objectUrl = URL.createObjectURL(file);
     try {
-      const result = await imageReader.decodeFromImageUrl(objectUrl);
-      const value = typeof result.getText === 'function' ? result.getText() : result.text;
+      const value = await decodeQrFromImageFile(file);
+      if (!value) {
+        throw new QrPhotoDecodeError('qr-not-found', 'QR code was not found on selected photo.');
+      }
       await submitQrValue(value);
     } catch (error) {
       console.error(error);
-      toast.error('Не удалось распознать QR на фото. Попробуйте сделать снимок ближе.');
+      toast.error(getPhotoDecodeMessage(error));
     } finally {
-      URL.revokeObjectURL(objectUrl);
       setProcessingUpload(false);
     }
   };

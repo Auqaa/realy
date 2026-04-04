@@ -3,6 +3,8 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
+const GUIDE_WORKSPACE_ROLES = new Set(['Guide', 'Curator', 'Administrator']);
+const EDITORIAL_ROLES = new Set(['Curator', 'Administrator']);
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -130,9 +132,14 @@ export const AuthProvider = ({ children }) => {
     toast.success('Вы вышли');
   };
 
+  const userRole = user?.role || 'User';
+
   const value = {
     user,
-    isAdmin: user?.role === 'Administrator',
+    userRole,
+    isAdmin: userRole === 'Administrator',
+    hasGuideWorkspaceAccess: GUIDE_WORKSPACE_ROLES.has(userRole),
+    hasEditorialAccess: EDITORIAL_ROLES.has(userRole),
     loading,
     login,
     register,
